@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CartoonMaker</title>
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>CartoonMaker</h1>
+      <p>Create an animated video from a script and images.</p>
+    </header>
+    <main>
+      <section class="controls">
+        <div class="field">
+          <label for="scriptInput">Script</label>
+          <textarea id="scriptInput" placeholder="Enter your narration script. Split by lines." rows="6"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="imagesInput">Images</label>
+          <input id="imagesInput" type="file" accept="image/*" multiple />
+          <small>Upload a few images; they will be animated with pan/zoom.</small>
+        </div>
+
+        <div class="grid">
+          <div class="field">
+            <label for="segmentDuration">Segment duration (seconds)</label>
+            <input id="segmentDuration" type="number" min="1" max="20" step="1" value="4" />
+          </div>
+          <div class="field">
+            <label for="fps">FPS</label>
+            <input id="fps" type="number" min="10" max="60" step="1" value="30" />
+          </div>
+          <div class="field">
+            <label for="resolution">Resolution</label>
+            <select id="resolution">
+              <option value="1280x720">1280x720 (HD 16:9)</option>
+              <option value="1920x1080">1920x1080 (Full HD 16:9)</option>
+              <option value="1080x1080">1080x1080 (Square 1:1)</option>
+              <option value="720x1280">720x1280 (Vertical 9:16)</option>
+              <option value="1080x1920">1080x1920 (Vertical 9:16)</option>
+              <option value="1080x1350">1080x1350 (Portrait 4:5)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="exportEngine">Export Engine
+              <button id="exportHelpBtn" class="help-btn" aria-expanded="false" aria-controls="exportHelpTip" type="button">?</button>
+            </label>
+            <select id="exportEngine">
+              <option value="auto">Auto (MediaRecorder)</option>
+              <option value="ffmpeg">FFmpeg Fallback (MP4)</option>
+            </select>
+            <div id="exportHelpTip" class="tooltip" role="note" style="display:none">
+              <strong>Auto (MediaRecorder)</strong>
+              <ul>
+                <li>Fast and efficient; uses native browser recording.</li>
+                <li>Best for modern browsers with MediaRecorder support.</li>
+                <li>Produces `.webm` (VP9/Opus) in most browsers.</li>
+              </ul>
+              <strong>FFmpeg Fallback (MP4)</strong>
+              <ul>
+                <li>Uses WebAssembly FFmpeg for `.mp4` export.</li>
+                <li>CPU-intensive; can be slower on mobile devices.</li>
+                <li>Requires local files under <code>vendor/ffmpeg/</code>; works offline.</li>
+              </ul>
+              <em>Use FFmpeg when you need MP4 or Auto fails for your setup.</em>
+              <p><a class="tooltip-link" href="README.md#5-mp4-export-optional" target="_blank" rel="noopener">Learn more in README</a></p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="stylePreset">Cartoon Style</label>
+            <select id="stylePreset">
+              <option value="none">None</option>
+              <option value="comic">Comic Bold</option>
+              <option value="noir">Noir</option>
+              <option value="sepia">Sepia Vintage</option>
+              <option value="pop">Pop Art</option>
+              <option value="manga">Manga Halftone</option>
+              <option value="neon">Neon Cyberpunk</option>
+              <option value="watercolor">Watercolor Soft</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="transitionPreset">Transition</label>
+            <select id="transitionPreset">
+              <option value="none">None</option>
+              <option value="crossfade">Crossfade</option>
+              <option value="slide_left">Slide Left</option>
+              <option value="slide_up">Slide Up</option>
+              <option value="zoom_dip">Zoom Dip</option>
+            </select>
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input id="showCaptions" type="checkbox" checked />
+              Show captions from script
+            </label>
+          </div>
+          <div class="field">
+            <label for="captionSize">Caption size</label>
+            <input id="captionSize" type="range" min="14" max="48" step="1" value="24" />
+          </div>
+          <div class="field">
+            <label for="captionStyle">Caption style</label>
+            <select id="captionStyle">
+              <option value="box">Box</option>
+              <option value="shadow">Shadow</option>
+              <option value="none">None</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="musicInput">Background music (optional)</label>
+            <input id="musicInput" type="file" accept="audio/*" />
+            <small>Uploaded music will be included in the exported video.</small>
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input id="includeMic" type="checkbox" />
+              Include microphone narration in export
+            </label>
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input id="useTitleCard" type="checkbox" />
+              Add title card (from first script line)
+            </label>
+          </div>
+          <div class="field checkbox">
+            <label>
+              <input id="useEndCard" type="checkbox" />
+              Add end card (from last script line)
+            </label>
+          </div>
+          <div class="field">
+            <label>Notices</label>
+            <button id="resetNoticesBtn" type="button">Show notices again</button>
+            <small>Clears dismissal for FFmpeg-related notices this session.</small>
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button id="previewBtn">Preview</button>
+          <button id="recordBtn">Export Video</button>
+          <a id="downloadLink" href="#" download="cartoonmaker.webm" style="display:none">Download Video</a>
+        </div>
+        <div class="status" id="status"></div>
+        <div id="notice" class="notice" role="alert" style="display:none"></div>
+      </section>
+
+      <section class="segments">
+        <h3>Segment Styles</h3>
+        <p class="muted">Each script line can have its own style.</p>
+        <div id="segmentsList" class="segments-list"></div>
+      </section>
+
+      <section class="stage">
+        <canvas id="stage"></canvas>
+      </section>
+    </main>
+
+    <footer>
+      <small>
+        Voice preview uses browser speech synthesis; exported video is visual-only.
+        — <a href="privacy.html">Privacy Policy</a>
+      </small>
+    </footer>
+
+    <script src="main.js"></script>
+    <script>
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          // Register relative to current path to support subpath hosting (e.g., GitHub Pages)
+          navigator.serviceWorker.register('sw.js').catch(() => {});
+        });
+      }
+    </script>
+  </body>
+  </html>
